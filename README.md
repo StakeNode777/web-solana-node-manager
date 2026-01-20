@@ -15,19 +15,6 @@ It allows you to manage **validator identity transfers** remotely — from your 
 Validator keys remain encrypted and safely stored inside **SNM**, while WSNM only sends verified commands  
 to transfer your validator identity between available Solana servers.
 
-
-┌─────────┐        ┌──────────────┐        ┌──────────────┐ 
-│ Browser │ <----> │  WSNM Server │ <----> |  SNM Server  |
-└─────────┘        └──────────────┘        └──────────────┘ 
-                                             ▲          ▲
-                                             │          │
-                                             │          │
-                                             v          v
-                               ┌────────────────┐    ┌────────────────┐  
-                               │ Solana Primary │    │ Solana Spare   │
-                               │    Validator   │    │    Validator   │
-                               └────────────────┘    └────────────────┘
-
 ---
 
 ## Key Features
