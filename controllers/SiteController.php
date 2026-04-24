@@ -60,11 +60,17 @@ class SiteController extends Controller
 
     public function actionIndex()
     {
+        if (!Yii::$app->user->isGuest) {
+            return $this->redirect(['/validator']);
+        }           
         return $this->render('index');        
     }
 
     public function actionThank()
-    {     
+    {
+        if (!Yii::$app->user->isGuest) {
+            return $this->redirect(['/validator']);
+        }           
         return $this->render('thank');
     }
 
