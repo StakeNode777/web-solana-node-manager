@@ -78,11 +78,11 @@ class Server extends ActiveRecord
         return $this->hasOne(Validator::class, ['id' => 'validator_id']);
     }
 
-    public static function getList($validatorID = null)
+    public static function getList($validator_id = null)
     {
-        $servers = is_null($validatorID)
+        $servers = is_null($validator_id)
             ? self::find()->all()
-            : self::find()->where(['validator_id' => $validatorID])->all();
+            : self::find()->where(['validator_id' => $validator_id])->all();
         
         return \yii\helpers\ArrayHelper::map($servers, 'name', 'name');
     }

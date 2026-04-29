@@ -2,6 +2,7 @@
 
 $params = array_merge(
     require __DIR__ . '/params.php',
+    require __DIR__ . '/snm.php' // Include node manager config
 );
 $db = require __DIR__ . '/db.php';
 

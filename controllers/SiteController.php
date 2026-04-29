@@ -58,11 +58,20 @@ class SiteController extends Controller
         ];
     }
 
+    //If we put the redirection here, then even the error cases will be redirected.
+    /*public function beforeAction($action)
+    {
+        if (!Yii::$app->user->isGuest) {
+            return $this->redirect(['/validator']);
+        }
+        return parent::beforeAction($action);
+    }*/
+
     public function actionIndex()
     {
         if (!Yii::$app->user->isGuest) {
             return $this->redirect(['/validator']);
-        }           
+        }        
         return $this->render('index');        
     }
 
@@ -70,7 +79,7 @@ class SiteController extends Controller
     {
         if (!Yii::$app->user->isGuest) {
             return $this->redirect(['/validator']);
-        }           
+        }        
         return $this->render('thank');
     }
 
@@ -101,6 +110,10 @@ class SiteController extends Controller
 
     public function actionRegister()
     {
+        if (!Yii::$app->params['allowUserRegistrations']) {
+            return $this->redirect(['site/index']);
+        }
+
         $model = new RegisterForm();
         if ($model->load(Yii::$app->request->post())) {
             if ($user = $model->register()) {

@@ -50,8 +50,10 @@ class NavbarHelper
         } else{
             $login_url = Url::toRoute('site/login');
             $items[] = "<a class='nav-link modal-login-btn' href='{$login_url}'>Sign In</a>";
-            $reg_url = Url::toRoute('site/register');
-            $items[] = "<a class='nav-link' href='{$reg_url}'>Sign Up</a>";
+            if (Yii::$app->params['allowUserRegistrations']) {
+                $reg_url = Url::toRoute('site/register');
+                $items[] = "<a class='nav-link' href='{$reg_url}'>Sign Up</a>";
+            }
         }
 
         return $items;

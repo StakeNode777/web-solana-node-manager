@@ -12,7 +12,7 @@ use app\services\Helper;
 
 $this->registerCss("
     .view-container {
-        padding: 3rem;
+        margin: 50px;
     }
     .identity-span {
         color: gray;
@@ -25,78 +25,43 @@ $this->registerCss("
 // Register Font Awesome
 $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css', ['position' => \yii\web\View::POS_HEAD]);
 
-// echo DetailView::widget([
-//     'model' => $model,
-//     'options' => ['class' => 'table table-striped view-container'],
-//     'attributes' => [
-//         [
-//             'label' => Html::img($model->img_url, ['style' => 'max-height:150px; margin-right:10px;']),
-//             'format' => 'raw',
-//             'value' => function ($model) {
-//                 $html = '<h4>' . Html::encode($model->name ?: 'Unnamed') . '</h4>';
-//                 $html .= '<small class="identity-span">identity: ' . Html::encode($model->identity) . '</small>';
-//                 $html .= '<br><small class="vote-acc-span">vote_acc: ' . Html::encode($model->vote_account) . '</small>';
-//                 $html .= '<br><br>Health: <span style="color: ' . Html::encode(Helper::healthColor($model->health)) . ';">' . Html::encode($model->health) . '</span>';
-//                 $html .= '<br>Active Server: ' . (!empty($model->snm_server) ? Html::encode($model->snm_server) : '<span class="not-set">(not set)</span>');
-//                 return $html;
-//             },
-//         ],
-//         'cluster',
-//         //'snm_server',
-//         //'health',
-//         //'identity',
-//         //'vote_account',
-//         //'configured:boolean',
-//         //'snm_ssh_login',
-//         [
-//             'label' => 'Configured',
-//             'format' => 'raw',
-//             'value' => function ($model) {
-//                 return Html::encode(Helper::yesNoHelper($model->configured))
-//                     . ' '
-//                     . Html::a('<i class="fas fa-gear"></i>', ['validator/configure', 'id' => $model->id], ['title' => 'Configure']);
-//             },
-//         ],
-//     ],
-// ]);
+echo DetailView::widget([
+    'model' => $model,
+    'options' => ['class' => 'table table-striped view-container'],
+    'attributes' => [
+        [
+            'label' => Html::img($model->img_url, ['style' => 'max-height:150px; margin-right:10px;']),
+            'format' => 'raw',
+            'value' => function ($model) {
+                $html = '<h4>' . Html::encode($model->name ?: 'Unnamed') . '</h4>';
+                $html .= '<small class="identity-span">identity: ' . Html::encode($model->identity) . '</small>';
+                $html .= '<br><small class="vote-acc-span">vote_acc: ' . Html::encode($model->vote_account) . '</small>';
+                $html .= '<br><br>Health: <span style="color: ' . Html::encode(Helper::healthColor($model->health)) . ';">' . Html::encode($model->health) . '</span>';
+                $html .= '<br>Active Server: ' . (!empty($model->snm_server) ? Html::encode($model->snm_server) : '<span class="not-set">(not set)</span>');
+                return $html;
+            },
+        ],
+        'cluster',
+        //'snm_server',
+        //'health',
+        //'identity',
+        //'vote_account',
+        //'configured:boolean',
+        //'snm_ssh_login',
+        [
+            'label' => 'Configured',
+            'format' => 'raw',
+            'value' => function ($model) {
+                return Html::encode(Helper::yesNoHelper($model->configured))
+                    . ' '
+                    . Html::a('<i class="fas fa-gear"></i>', ['validator/configure', 'id' => $model->id], ['title' => 'Configure']);
+            },
+        ],
+    ],
+]);
 
 /** @var yii\web\View $this */
-
-$validator = $model;
 ?>
-
-<div class="container-fluid view-container">
-    <div class="row">
-        <div class="col-12">
-            <div class="table-responsive">
-                <table id="w0" class="table table-striped view-container">
-                    <tr>
-                        <th><img src="<?= Html::encode($validator->img_url) ?>" alt="" style="max-height:150px; margin-right:10px;"></th>
-                        <td>
-                            <h4><?= Html::encode($validator->name ?: 'Unnamed') ?></h4>
-                            <small class="identity-span">identity: <?= Html::encode($validator->identity) ?></small><br>
-                            <small class="vote-acc-span">vote_acc: <?= Html::encode($validator->vote_account) ?></small><br><br>
-                            Health: <span style="color: <?= Html::encode(Helper::healthColor($validator->health)) ?>;"><?= Html::encode($validator->health) ?></span><br>
-                            Active Server: <?= !empty($validator->snm_server) ? Html::encode($validator->snm_server) : '<span class="not-set">(not set)</span>' ?>
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Cluster</th>
-                        <td><?= Html::encode($validator->cluster) ?></td>
-                    </tr>
-                    <tr>
-                        <th>Configured</th>
-                        <td>
-                            <?= Html::encode(Helper::yesNoHelper($validator->configured)) ?>
-                            <?= Html::a('<i class="fas fa-gear"></i>', ['validator/configure', 'id' => $validator->id], ['title' => 'Configure']) ?>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-    </div>
-</div>
-
 <div class="table table-striped view-container">
     <!-- Transfer Button -->
     <?= Html::button('Transfer', [
@@ -106,13 +71,108 @@ $validator = $model;
         'data-bs-target' => '#transfer-modal'
     ]) ?>
 
+<!-- Show logs Button -->
+    <?= Html::a('Show logs', null, [
+        'class' => 'toggle-button',
+        'id' => 'show-logs-btn',
+        'onclick' => "toggleLogs()",
+    ]) ?>
 </div>
 
 <div class="table table-striped view-container extra-tables">
     <span class="server-title">Servers</span>
+    <button class="refresh-server-button" onclick="refreshServers()">⟳</button>
+    <span class="last-updated">Last Updated: <?= $lastUpdated ?></span>
     <?php echo $this->render('_servers', ['serverDataProvider' => $serverDataProvider]); ?>
 
+
+    <div id="logMainContainer" class="action-log-index">
+        <div id="logTableContainer" class="log-table-container">
+
+            <?php require __DIR__ . '/_logs_table.php'; ?>
+
+        </div>
+    </div>
 </div>
+
+<script>
+function toggleLogs() {
+    const container = document.getElementById('logTableContainer');
+    const button = document.querySelector('.toggle-button');
+    container.classList.toggle('active');
+    button.textContent = container.classList.contains('active') ? 'Hide Logs' : 'Show Logs';
+
+    // scroll down
+    sleep(400);
+    if (container.classList.contains('active')) {
+        var table = $('#logTableContainer');
+        table.slideDown('fast', function() {
+            // Smooth scroll to table
+            $('html, body').animate({
+                scrollTop: table.offset().top
+            }, 600);
+        });
+    }
+}
+
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function refreshLogs() {
+    fetch('?r=log&id=<?=$model->id?>', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(data => {
+        const container = document.getElementById('logTableContainer');
+        container.innerHTML = data;
+        container.classList.add('active');
+        document.querySelector('.toggle-button').textContent = 'Hide Logs';
+    })
+    .catch(error => console.error('Error refreshing logs:', error));
+}
+
+function refreshServers() {
+    fetch('?r=log&type=servers&id=<?=$model->id?>', {
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        }
+    })
+    .then(response => response.text())
+    .then(data => {
+        const container = document.getElementById('serverTableContainer');
+        container.innerHTML = data;
+    })
+    .catch(error => console.error('Error refreshing servers:', error));
+}
+
+function refreshModalLog(logs) {
+    var csrfToken = document.querySelector("meta[name=\"csrf-token\"]");
+    
+    fetch('?r=log&type=modal-log&id=<?=$model->id?>', {
+        method: "POST",
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            "Content-Type": "application/json",
+            'X-CSRF-Token': csrfToken.getAttribute("content"),
+        },
+        body: JSON.stringify({
+            logs: logs,
+        }),
+    })
+    .then(response => response.text())
+    .then(data => {
+        const container = document.getElementById('modal-log');
+        container.innerHTML = data;
+    })
+    .catch(error => console.error('Error refreshing servers:', error));
+}
+</script>
+
+
 
 <!-- Transfer Modal -->
 <?php Modal::begin([
@@ -225,8 +285,30 @@ $validator = $model;
             'class' => 'btn btn-success',
             'id' => 'action-btn'
         ]) ?>
+        
+        <!-- Loader (hidden by default) -->
+        <div id="loader" class="loader ms-2" style="display: none;">
+            <div class="spinner-border spinner-border-sm text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <span class="ms-1">Processing...</span>
+        </div>
     </div>
 
+    <!-- Modal Log (hidden by default) -->
+    <div id="modal-log" class="modal-log-container"> 
+         <?php require __DIR__ . '/_modal_log.php'; ?>
+    <!--
+        <table>
+            <tbody>
+                <tr><td>log</td></tr>
+                <tr><td>log</td></tr>
+                <tr><td>log</td></tr>
+                <tr><td>log</td></tr>
+                <tr><td>log</td></tr>
+            </tbody>
+        </table>
+    -->
     </div>
 </div>
 
@@ -271,6 +353,53 @@ $validator = $model;
     display: none;
 }
 
+/*** logs table ***/
+
+.log-table {
+    font-size: 12px;
+    font-family: "Courier New", Courier, monospace;
+    background-color: #f8f9fa;
+}
+.log-table th, .log-table td {
+    padding: 6px;
+    border: 1px solid #dee2e6;
+}
+.log-table tr:nth-child(even) {
+    background-color: #e9ecef;
+}
+.log-table .params-column {
+    max-width: 300px;
+    word-wrap: break-word;
+}
+.log-table-container {
+    display: none;
+}
+.log-table-container.active {
+    display: block;
+}
+.toggle-button, .refresh-server-button {
+    margin-bottom: 10px;
+    padding: 8px 16px;
+    background-color: #ffffffff;
+    color: grey;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+.toggle-button:hover, .refresh-server-button:hover {
+    background-color: #f1f4f8ff;
+}
+
+.hide-logs-button {
+    float: right;
+    margin-right: 200px;
+}
+
+.refresh-server-button {
+    padding: 8px;
+    font-size: 14px;
+}
+
 .server-table-container {
     margin-left: 15px;
 }
@@ -298,3 +427,146 @@ $validator = $model;
 
 <!-- Bootstrap Icons (if not already included) -->
 <?php $this->registerCssFile('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css'); ?>
+
+<!-- JavaScript -->
+<?php $this->registerJs('
+document.addEventListener("DOMContentLoaded", function() {
+    // Initialize Bootstrap tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll("[data-bs-toggle=\"tooltip\"]"));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    
+    // Get modal element
+    var transferModal = document.getElementById("transfer-modal");
+    var modal = new bootstrap.Modal(transferModal);
+
+    var defaultDisplayMode = document.getElementById("input-server-from").style.display;
+    
+    // Handle dropdown change
+    document.getElementById("transfer-options").addEventListener("change", function() {
+        var selectedValue = this.value;
+        var buttonText = selectedValue === "activation" ? "Activate" : "Transfer";
+        document.getElementById("action-btn").textContent = buttonText;
+
+        var serverFrom = document.getElementById("input-server-from");
+        if (selectedValue === "activation") {
+            serverFrom.style.display = "none";
+        } else {
+            serverFrom.style.display = defaultDisplayMode;
+        }
+
+    });
+    
+    // Handle action button click
+    document.getElementById("action-btn").addEventListener("click", function() {
+        var selectedOption = document.getElementById("transfer-options").value;
+        var safeFlag = document.getElementById("safe-flag").checked;
+
+        var validatorID = document.getElementById("validator-id").value;
+        var serverFrom = document.getElementById("server-from").value;
+        var serverTo = document.getElementById("server-to").value;
+
+        var actionBtn = this;
+        var loader = document.getElementById("loader");
+        
+        // Show loader and disable button
+        loader.style.display = "inline-flex";
+        actionBtn.disabled = true;
+        
+        // Prepare API data
+        var formData = new FormData();
+        formData.append("option", selectedOption);
+        formData.append("safe", safeFlag ? "true" : "false");
+        formData.append("validatorID", validatorID);
+        formData.append("serverFrom", serverFrom);
+        formData.append("serverTo", serverTo);
+        
+        // Add CSRF token
+        var csrfToken = document.querySelector("meta[name=\"csrf-token\"]");
+        if (csrfToken) {
+            formData.append("_csrf", csrfToken.getAttribute("content"));
+        }
+        
+        // Make API call
+        fetch("' . \yii\helpers\Url::to(['validator/transfer-api']) . '", {
+            method: "POST",
+            body: formData,
+            headers: {
+                "X-Requested-With": "XMLHttpRequest"
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Hide loader and enable button
+            loader.style.display = "none";
+            actionBtn.disabled = false;
+            
+            if (data.success) {
+                // Close modal on success
+                //modal.hide();
+                
+                // Show success message
+                showMessage("Operation completed successfully!", "success");
+            } else {
+                // Show error message
+                var errorMsg = data.message || "Operation failed. Please try again.";
+                showMessage(errorMsg, "error");
+            }
+
+            if (data.transferred) {
+                console.log("transferred");
+                console.log(data.log);
+
+                refreshModalLog(data.log);
+            }
+        })
+        .catch(error => {
+            // Hide loader and enable button
+            loader.style.display = "none";
+            actionBtn.disabled = false;
+            
+            // Show error message
+            showMessage("Network error occurred. Please try again.", "error");
+        });
+    });
+    
+    // Reset modal state when closed
+    transferModal.addEventListener("hidden.bs.modal", function() {
+        document.getElementById("transfer-options").value = "transfer";
+        document.getElementById("action-btn").textContent = "Transfer";
+        document.getElementById("safe-flag").checked = false;
+        document.getElementById("loader").style.display = "none";
+        document.getElementById("action-btn").disabled = false;
+    });
+    
+    // Helper function to show messages
+    function showMessage(message, type) {
+        // Check if Toastr is available
+        if (typeof toastr !== "undefined") {
+            if (type === "success") {
+                toastr.success(message);
+            } else {
+                toastr.error(message);
+            }
+        } else {
+            // Fallback to Bootstrap alert
+            var alertClass = type === "success" ? "alert-success" : "alert-danger";
+            var alertDiv = document.createElement("div");
+            alertDiv.className = "alert " + alertClass + " alert-dismissible fade show mt-3";
+            alertDiv.innerHTML = message + 
+                "<button type=\"button\" class=\"btn-close\" data-bs-dismiss=\"alert\"></button>";
+            
+            var modalBody = document.querySelector("#transfer-modal .modal-body");
+            modalBody.insertBefore(alertDiv, modalBody.firstChild);
+            
+            // Auto-remove alert after 5 seconds
+            setTimeout(function() {
+                if (alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 5000);
+        }
+    }
+});
+', View::POS_END); ?>
