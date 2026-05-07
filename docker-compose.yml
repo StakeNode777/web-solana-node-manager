@@ -1,9 +1,68 @@
-version: '2'
+version: '3.8'
+
 services:
-  php:
-    image: yiisoftware/yii2-php:7.4-apache
+  # The PHP-Apache container for our Yii2 application
+  app:
+    # Build the image from the Dockerfile in the current directory
+    build: .
+    container_name: yii2-app
+    environment:
+      ADMIN_EMAIL: '${ADMIN_EMAIL}'
+      ADMIN_PASSWORD: '${ADMIN_PASSWORD}'
+    # Map port 8080 on your host to port 80 in the container
+    # This allows you to access the app at http://localhost:8080
+    #ports:
+    #  - "8080:80"
+    expose:
+      - "9000"
+    # Mount the current project directory and our custom Apache config file
     volumes:
-      - ~/.composer-docker/cache:/root/.composer/cache:delegated
-      - ./:/app:delegated
+      - .:/var/www/html
+      - ./docker/apache/000-default.conf:/etc/apache2/sites-available/000-default.conf
+    # Apache needs the MySQL service to be running
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  caddy:
+    image: caddy:2
     ports:
-      - '8000:80'
+      - "8080:8080"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - .:/var/www/html
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - app
+
+  # The MySQL database
+  mysql:
+    image: mysql:8.0
+    container_name: yii2-mysql
+    restart: always
+    # Set environment variables for the database configuration
+    environment:
+      MYSQL_ROOT_PASSWORD: '${DB_PASSWORD}'
+      MYSQL_DATABASE: '${DB_DATABASE}'
+      MYSQL_USER: '${DB_USERNAME}'
+      MYSQL_PASSWORD: '${DB_PASSWORD}'
+    ports:
+      - "33060:3306"
+    # we need this for yii2 app to wait until mysql completely ready
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+    # Use a named volume to persist database data
+    volumes:
+      - '${DB_DIR}:/var/lib/mysql'
+
+# Define the named volume for MySQL data persistence
+volumes:
+  db-data:
+  caddy_data:
+  caddy_config:
