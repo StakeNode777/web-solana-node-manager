@@ -1,0 +1,85 @@
+.landing-info .header .description h3 {
+    margin-bottom: 5rem;
+}
+
+.landing-info .row {
+    padding: 56px 0;
+}
+
+.landing-info .row:not(.row-odd) {
+    background: linear-gradient(135deg, #f3f6ff, #e9f1ff, #e5fbf5, #f1fffb);
+}
+
+.landing-info .row-odd > .description {
+    margin-left: 64px;
+}
+
+.landing-info .row:not(.row-odd) > .description {
+    margin-right: 64px;
+}
+
+.landing-info .description h2 {
+    font-size: calc(1vw + 24px);
+    line-height: 1.2em;
+    margin: 0 0 24px 0;
+}
+
+.landing-info .description p {
+    font-size: 18px;
+}
+
+.landing-info .row > .img-block, .row > .description {
+    padding-right: 20px;
+    padding-left: 20px;
+}
+
+.landing-info .row > .img-block {
+    width: 360px;
+    height: 520px;
+    border-radius: 36px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+    display: flex
+;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    box-sizing: border-box;
+}
+
+.landing-info .row > .img-block > img {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+
+
+@media (max-width: 767px) {
+    .landing-info .row:not(.row-odd) > .description {
+        margin-right: 0;
+    }
+
+    .landing-info .row-odd > .description {
+        margin-left: 0;
+    }
+
+    .landing-info .row {
+        margin-left: 4%;
+    }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+    .landing-info .row:not(.row-odd) > .description {
+        margin-right: 0px;
+    }
+
+    .landing-info .row-odd > .description {
+        margin-left: 0;
+    }
+
+    .landing-info .row > .offset-md-2 {
+        margin-left: 8.333333333333%;
+    }
+}
