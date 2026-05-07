@@ -12,7 +12,7 @@ use app\services\Helper;
 
 $this->registerCss("
     .view-container {
-        margin: 50px;
+        padding: 3rem;
     }
     .identity-span {
         color: gray;
@@ -25,43 +25,78 @@ $this->registerCss("
 // Register Font Awesome
 $this->registerCssFile('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css', ['position' => \yii\web\View::POS_HEAD]);
 
-echo DetailView::widget([
-    'model' => $model,
-    'options' => ['class' => 'table table-striped view-container'],
-    'attributes' => [
-        [
-            'label' => Html::img($model->img_url, ['style' => 'max-height:150px; margin-right:10px;']),
-            'format' => 'raw',
-            'value' => function ($model) {
-                $html = '<h4>' . Html::encode($model->name ?: 'Unnamed') . '</h4>';
-                $html .= '<small class="identity-span">identity: ' . Html::encode($model->identity) . '</small>';
-                $html .= '<br><small class="vote-acc-span">vote_acc: ' . Html::encode($model->vote_account) . '</small>';
-                $html .= '<br><br>Health: <span style="color: ' . Html::encode(Helper::healthColor($model->health)) . ';">' . Html::encode($model->health) . '</span>';
-                $html .= '<br>Active Server: ' . (!empty($model->snm_server) ? Html::encode($model->snm_server) : '<span class="not-set">(not set)</span>');
-                return $html;
-            },
-        ],
-        'cluster',
-        //'snm_server',
-        //'health',
-        //'identity',
-        //'vote_account',
-        //'configured:boolean',
-        //'snm_ssh_login',
-        [
-            'label' => 'Configured',
-            'format' => 'raw',
-            'value' => function ($model) {
-                return Html::encode(Helper::yesNoHelper($model->configured))
-                    . ' '
-                    . Html::a('<i class="fas fa-gear"></i>', ['validator/configure', 'id' => $model->id], ['title' => 'Configure']);
-            },
-        ],
-    ],
-]);
+// echo DetailView::widget([
+//     'model' => $model,
+//     'options' => ['class' => 'table table-striped view-container'],
+//     'attributes' => [
+//         [
+//             'label' => Html::img($model->img_url, ['style' => 'max-height:150px; margin-right:10px;']),
+//             'format' => 'raw',
+//             'value' => function ($model) {
+//                 $html = '<h4>' . Html::encode($model->name ?: 'Unnamed') . '</h4>';
+//                 $html .= '<small class="identity-span">identity: ' . Html::encode($model->identity) . '</small>';
+//                 $html .= '<br><small class="vote-acc-span">vote_acc: ' . Html::encode($model->vote_account) . '</small>';
+//                 $html .= '<br><br>Health: <span style="color: ' . Html::encode(Helper::healthColor($model->health)) . ';">' . Html::encode($model->health) . '</span>';
+//                 $html .= '<br>Active Server: ' . (!empty($model->snm_server) ? Html::encode($model->snm_server) : '<span class="not-set">(not set)</span>');
+//                 return $html;
+//             },
+//         ],
+//         'cluster',
+//         //'snm_server',
+//         //'health',
+//         //'identity',
+//         //'vote_account',
+//         //'configured:boolean',
+//         //'snm_ssh_login',
+//         [
+//             'label' => 'Configured',
+//             'format' => 'raw',
+//             'value' => function ($model) {
+//                 return Html::encode(Helper::yesNoHelper($model->configured))
+//                     . ' '
+//                     . Html::a('<i class="fas fa-gear"></i>', ['validator/configure', 'id' => $model->id], ['title' => 'Configure']);
+//             },
+//         ],
+//     ],
+// ]);
 
 /** @var yii\web\View $this */
+
+$validator = $model;
 ?>
+
+<div class="container-fluid view-container">
+    <div class="row">
+        <div class="col-12">
+            <div class="table-responsive">
+                <table id="w0" class="table table-striped view-container">
+                    <tr>
+                        <th><img src="<?= Html::encode($validator->img_url) ?>" alt="" style="max-height:150px; margin-right:10px;"></th>
+                        <td>
+                            <h4><?= Html::encode($validator->name ?: 'Unnamed') ?></h4>
+                            <small class="identity-span">identity: <?= Html::encode($validator->identity) ?></small><br>
+                            <small class="vote-acc-span">vote_acc: <?= Html::encode($validator->vote_account) ?></small><br><br>
+                            Health: <span style="color: <?= Html::encode(Helper::healthColor($validator->health)) ?>;"><?= Html::encode($validator->health) ?></span><br>
+                            Active Server: <?= !empty($validator->snm_server) ? Html::encode($validator->snm_server) : '<span class="not-set">(not set)</span>' ?>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Cluster</th>
+                        <td><?= Html::encode($validator->cluster) ?></td>
+                    </tr>
+                    <tr>
+                        <th>Configured</th>
+                        <td>
+                            <?= Html::encode(Helper::yesNoHelper($validator->configured)) ?>
+                            <?= Html::a('<i class="fas fa-gear"></i>', ['validator/configure', 'id' => $validator->id], ['title' => 'Configure']) ?>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
 <div class="table table-striped view-container">
     <!-- Transfer Button -->
     <?= Html::button('Transfer', [
@@ -81,8 +116,10 @@ echo DetailView::widget([
 
 <div class="table table-striped view-container extra-tables">
     <span class="server-title">Servers</span>
-    <button class="refresh-server-button" onclick="refreshServers()">⟳</button>
-    <span class="last-updated">Last Updated: <?= $lastUpdated ?></span>
+    <button id="refresh-server-button-id" class="refresh-server-button" onclick="refreshServers(this)">
+        <span class="icon">⟳</span>
+    </button>
+    <span id="last-updated-span" class="last-updated">Last Updated: <?= $lastUpdated ?></span>
     <?php echo $this->render('_servers', ['serverDataProvider' => $serverDataProvider]); ?>
 
 
@@ -135,18 +172,29 @@ function refreshLogs() {
     .catch(error => console.error('Error refreshing logs:', error));
 }
 
-function refreshServers() {
+function refreshServers(button) {
+    // Disable button immediately
+    button.disabled = true;
+    button.classList.add('loading');
+
     fetch('?r=log&type=servers&id=<?=$model->id?>', {
         headers: {
             'X-Requested-With': 'XMLHttpRequest'
         }
     })
-    .then(response => response.text())
+    .then(response => response.json())
     .then(data => {
         const container = document.getElementById('serverTableContainer');
-        container.innerHTML = data;
+        const lastUpdated = document.getElementById('last-updated-span');
+        container.innerHTML = data.html;
+        lastUpdated.innerHTML = "Last Updated: " + data.lastUpdated;
     })
-    .catch(error => console.error('Error refreshing servers:', error));
+    .catch(error => console.error('Error refreshing servers:', error))
+    .finally(() => {
+        // Always re-enable button
+        button.disabled = false;
+        button.classList.remove('loading');
+    });
 }
 
 function refreshModalLog(logs) {
@@ -193,7 +241,7 @@ function refreshModalLog(logs) {
         <div class="input-group">
             <?= Html::dropDownList('transfer-options', 'transfer', [
                 'transfer' => 'Transfer',
-                'activation' => 'Activation'
+                'activate' => 'Activation'
             ], [
                 'class' => 'form-select',
                 'id' => 'transfer-options'
@@ -298,17 +346,6 @@ function refreshModalLog(logs) {
     <!-- Modal Log (hidden by default) -->
     <div id="modal-log" class="modal-log-container"> 
          <?php require __DIR__ . '/_modal_log.php'; ?>
-    <!--
-        <table>
-            <tbody>
-                <tr><td>log</td></tr>
-                <tr><td>log</td></tr>
-                <tr><td>log</td></tr>
-                <tr><td>log</td></tr>
-                <tr><td>log</td></tr>
-            </tbody>
-        </table>
-    -->
     </div>
 </div>
 
@@ -390,6 +427,10 @@ function refreshModalLog(logs) {
     background-color: #f1f4f8ff;
 }
 
+.toggle-button:disabled, .refresh-server-button:disabled {
+    cursor: not-allowed;
+}
+
 .hide-logs-button {
     float: right;
     margin-right: 200px;
@@ -398,6 +439,16 @@ function refreshModalLog(logs) {
 .refresh-server-button {
     padding: 8px;
     font-size: 14px;
+}
+
+.refresh-server-button.loading .icon {
+    display: inline-block;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
 }
 
 .server-table-container {
@@ -446,11 +497,11 @@ document.addEventListener("DOMContentLoaded", function() {
     // Handle dropdown change
     document.getElementById("transfer-options").addEventListener("change", function() {
         var selectedValue = this.value;
-        var buttonText = selectedValue === "activation" ? "Activate" : "Transfer";
+        var buttonText = selectedValue === "activate" ? "Activate" : "Transfer";
         document.getElementById("action-btn").textContent = buttonText;
 
         var serverFrom = document.getElementById("input-server-from");
-        if (selectedValue === "activation") {
+        if (selectedValue === "activate") {
             serverFrom.style.display = "none";
         } else {
             serverFrom.style.display = defaultDisplayMode;
@@ -510,16 +561,20 @@ document.addEventListener("DOMContentLoaded", function() {
                 showMessage("Operation completed successfully!", "success");
             } else {
                 // Show error message
-                var errorMsg = data.message || "Operation failed. Please try again.";
-                showMessage(errorMsg, "error");
+                //var errorMsg = data.message || "Operation failed. Please try again.";
+                //showMessage(errorMsg, "error");
             }
 
             if (data.transferred) {
-                console.log("transferred");
-                console.log(data.log);
+                //console.log("transferred");
+                //console.log(data.log);
 
                 refreshModalLog(data.log);
             }
+        })
+        .then(() => {
+            const button = document.getElementById("refresh-server-button-id");
+            refreshServers(button);
         })
         .catch(error => {
             // Hide loader and enable button

@@ -3,6 +3,8 @@
 
 namespace app\controllers;
 
+require_once(__DIR__ . '/../helpers/logger.php');
+
 use Yii;
 use yii\filters\AccessControl;
 use app\models\Validator;
@@ -33,7 +35,7 @@ class ValidatorController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['create'], // Apply to create action
+                'only' => ['index', 'view', 'create', 'delete', 'configure', 'createStep1', 'createStep2', 'createStep3', 'transferApi'], // Apply to all actions
                 'rules' => [
                     [
                         'allow' => true, // Allow access if the rule matches
@@ -48,6 +50,33 @@ class ValidatorController extends Controller
         ];
     }
 
+    /**
+     * Check if the current user is the owner of the validator
+     * @param int $validatorId ID of the validator to check
+     * @return Validator|null Returns the validator model if the user is the owner, otherwise null
+     * @throws \yii\web\ForbiddenHttpException If the user is not the owner
+     */
+    private function checkValidatorOwnership($validatorId)
+    {
+        $validator = Validator::findOne($validatorId);
+        
+        if ($validator === null) {
+            throw new \yii\web\NotFoundHttpException('Validator not found.');
+        }
+        
+        // check if user is logged in
+        if (Yii::$app->user->isGuest) {
+            throw new \yii\web\ForbiddenHttpException('You must be logged in to access this validator.');
+        }
+        
+        // check if the current user is the owner of the validator
+        if ($validator->user_id != Yii::$app->user->id) {
+            throw new \yii\web\ForbiddenHttpException('You do not have permission to access this validator.');
+        }
+        
+        return $validator;
+    }
+
     public function actionIndex()
     {
         $query = Validator::find()->own();
@@ -55,15 +84,14 @@ class ValidatorController extends Controller
             'query' => $query,
         ]);
 
-        return $this->render('index', ['dataProvider' => $dataProvider]);
+        $validators = $query->all();
+
+        return $this->render('index', ['dataProvider' => $dataProvider, 'validators' => $validators]);
     }
 
     public function actionView($id)
     {
-        $model = Validator::findOne($id);
-        if ($model === null) {
-            throw new \yii\web\NotFoundHttpException();
-        }
+        $model = $this->checkValidatorOwnership($id);
 
         $servers = Server::getList($model->id);
 
@@ -96,11 +124,21 @@ class ValidatorController extends Controller
         if (Yii::$app->request->isAjax && Yii::$app->request->get('type') === 'servers') {
             // fetch new data
             (new SyncService())->updateById($model->id);
+            $lastUpdated = Server::find()->max('updated_at');
+            $lastUpdated = Yii::$app->formatter->asDatetime($lastUpdated) ?? 'error';
 
-            // render result
-            return $this->renderAjax('_servers', [
-                'serverDataProvider' => $serverDataProvider, 'lastUpdated' => $lastUpdated
+            // render partial into string
+            $html = $this->renderPartial('_servers', [
+                'serverDataProvider' => $serverDataProvider,
+                'lastUpdated' => $lastUpdated,
             ]);
+
+            \Yii::$app->response->format = Response::FORMAT_JSON;
+
+            return [
+                'html' => $html,
+                'lastUpdated' => $lastUpdated,
+            ];
         } elseif (Yii::$app->request->isAjax && Yii::$app->request->get('type') === 'modal-log') {
             $logs = Yii::$app->request->post('logs') ?? [];
             $logProvider = new ArrayDataProvider([
@@ -115,7 +153,7 @@ class ValidatorController extends Controller
         return $this->render('view', [
             'model' => $model, 
             'servers' => $servers, 
-            'serversData' => Server::find()->all(),
+            'serversData' => Server::find()->where(['validator_id' => $model->id])->all(),
             'dataProvider' => $dataProvider, 
             'serverDataProvider' => $serverDataProvider,
             'lastUpdated' => $lastUpdated,
@@ -125,19 +163,14 @@ class ValidatorController extends Controller
 
     public function actionDelete($id)
     {
-        $model = Validator::findOne($id);
-        if ($model !== null) {
-            $model->delete();
-        }
+        $model = $this->checkValidatorOwnership($id);
+        $model->delete();
         return $this->redirect(['index']);
     }
 
     public function actionConfigure($id)
     {
-        $model = Validator::findOne($id);
-        if ($model === null) {
-            throw new \yii\web\NotFoundHttpException();
-        }
+        $model = $this->checkValidatorOwnership($id);
 
         if (Yii::$app->request->isPost) {
             $model->load(Yii::$app->request->post());
@@ -212,10 +245,12 @@ class ValidatorController extends Controller
         }
 
         if (Yii::$app->request->isPost) {
+            info('[actionCreateStep1] New validator is being created...');
+
             // check if Identity already exists for a given user
             $_identity = Yii::$app->request->post()['Validator']['identity'] ?? '';
             if (Validator::find()->where(['identity' => $_identity, 'user_id' => Yii::$app->user->id])->exists()) {
-                //Yii::$app->session->setFlash('error', 'Validator with this identity already exists.');
+                info('[actionCreateStep1] Validator with this identity already exists.');
                 Yii::$app->session->setFlash('error', [
                     [
                         'title' => 'Error',
@@ -238,7 +273,7 @@ class ValidatorController extends Controller
                 $account = $model->identity;
                 $token = getenv('VALIDATORS_APP_TOKEN');
                 if (!$token) {
-                    //Yii::$app->session->setFlash('error', 'Missing API token.');
+                    info('[actionCreateStep1] Error: Missing API token.');
                     Yii::$app->session->setFlash('error', [
                         [
                             'title' => 'Error',
@@ -255,6 +290,9 @@ class ValidatorController extends Controller
                     return $this->render('create-step1', ['model' => $model]);
                 }
                 $url = "https://www.validators.app/api/v1/validators/{$network}/{$account}.json";
+
+                info('[actionCreateStep1] Fetching validator infos. Calling endpoint: ' . $url);
+
                 $ch = curl_init($url);
                 curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
                 curl_setopt($ch, CURLOPT_HTTPHEADER, ["Token: {$token}"]);
@@ -275,13 +313,18 @@ class ValidatorController extends Controller
                         'img_url' => $avatar_url,
                     ];
                     $session->set('validator_wizard', $wizardData);
+
+                    info('[actionCreateStep1] Got Validator info: ' . \json_encode($wizardData));
+
                     return $this->redirect(['create-step2']);
                 } else {
-                    //Yii::$app->session->setFlash('error', 'API call failed with code: ' . $httpCode);
+                    info('[actionCreateStep1] Error: Wrong Validator Identity. ' . 
+                            'API call failed with code: ' . $httpCode);
                     Yii::$app->session->setFlash('error', [
                         [
                             'title' => 'Error',
-                            'message' => 'Wrong Validator Identity',
+                            'message' => 'Wrong Validator Identity. ' . 
+                                            'API call failed with code: ' . $httpCode,
                             'options' => [
                                 'progressBar' => true, 
                                 'timeOut' => 5000, 
@@ -302,9 +345,12 @@ class ValidatorController extends Controller
     {
         $session = Yii::$app->session;
         if (!$session->has('validator_wizard')) {
+            info('[actionCreateStep2]  session from step1 is absent, redirecting to Step1...');
             return $this->redirect(['create-step1']);
         }
         $data = $session->get('validator_wizard');
+
+        info('[actionCreateStep2] found session data from Step1: ' . \json_encode($data));
 
         if (Yii::$app->request->isPost) {
             $model = new Validator();
@@ -316,6 +362,8 @@ class ValidatorController extends Controller
             $model->health = 'OK';
             $model->snm_server = '';
             $model->configured = false;
+            $model->user_id = Yii::$app->user->id; // Set current user as owner
+            
             if ($model->save()) {
                 $session->set('new_validator_id', $model->id);
                 $session->remove('validator_wizard');
@@ -327,9 +375,12 @@ class ValidatorController extends Controller
                     $errorString .= $attribute . ': ' . implode(', ', $errors) . '; ';
                 }
                 //Yii::$app->session->setFlash('error', 'Failed to save validator: ' . $errors);
+                info('[actionCreateStep2] Error: Failed to save validator: ' . $errors);
                 throw new ErrorException($errorString);
             }
         }
+
+        info('[actionCreateStep2] Validator successfully added!');
 
         return $this->render('create-step2', ['data' => $data]);
     }
@@ -341,7 +392,11 @@ class ValidatorController extends Controller
         if (!$id) {
             return $this->redirect(['index']);
         }
-        return $this->render('create-step3', ['id' => $id]);
+        
+        // Check ownership of the newly created validator
+        $validator = $this->checkValidatorOwnership($id);
+        
+        return $this->render('create-step3', ['id' => $id, 'validator' => $validator]);
     }
 
     public function actionTransferApi()
@@ -353,13 +408,7 @@ class ValidatorController extends Controller
             $safe = \Yii::$app->request->post('safe') === 'true';
             
             try {     
-                if ($option === 'transfer') {
-                    // Handle transfer logic
-                    $result = $this->performTransfer($safe);
-                } else {
-                    // Handle activation logic
-                    $result = $this->performActivation($safe);
-                }
+                $result = $this->performTransfer($safe, $option);
 
                 $success = ArrayHelper::getValue($result, 'has_errors') === false;
                 $message = $success
@@ -391,7 +440,7 @@ class ValidatorController extends Controller
         ];
     }
 
-    private function performTransfer($safe)
+    private function performTransfer($safe, $option)
     {
         $validatorID = \Yii::$app->request->post('validatorID');
         $serverFrom = \Yii::$app->request->post('serverFrom');
@@ -401,14 +450,17 @@ class ValidatorController extends Controller
             return;
         }
 
-        $v = Validator::findOne($validatorID);
-        if (!$v || !$v->identity) {
-            return;
+        $v = $this->checkValidatorOwnership($validatorID);
+        if (!$v->identity) {
+            throw new \yii\web\ForbiddenHttpException('Validator identity is missing.');
         }
 
+        // [ transfer, activate ] 
+        $operation = $option;
+
         $dto = new TransferDTO(
-            "transfer",
-            true,
+            $option,
+            $safe,
             $v->identity,
             $serverFrom,
             $serverTo,
@@ -425,9 +477,19 @@ class ValidatorController extends Controller
         return ['transferred' => true, 'safe_mode' => $safe, 'data' => $res];
     }
 
-    private function performActivation($safe)
+    private function makeOperation(bool $safe, string $option): string
     {
-        // Your activation logic here
-        return ['activated' => true, 'safe_mode' => $safe];
+        $operation = '';
+        if ($safe) {
+            $operation = $option === 'transfer' 
+                ? 'safe' 
+                : 'safe_activate';
+        } else {
+            $operation = $option === 'transfer' 
+                ? 'transfer_only' 
+                : 'activate_only';
+        }
+        
+        return $operation;
     }
 }

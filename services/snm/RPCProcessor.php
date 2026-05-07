@@ -12,7 +12,7 @@ class RPCProcessor
     public function DoTransfer(SSHConfig $sshConfig, TransferDTO $dto, $writeToLog = true): array
     {   
         $syncService = new SyncService();
-        $payload = $this->makePayload($dto);
+        $payload = $this->makePayloadTransfer($dto);
         $res = $syncService->sendCommandAndFetchResult(
             $sshConfig,
             $payload,
@@ -35,7 +35,7 @@ class RPCProcessor
         return $res;
     }
 
-    private function makePayload(TransferDTO $dto): string
+    private function makePayloadTransfer(TransferDTO $dto): string
     {
         $payload = [
             "name" => "do-transfer",
@@ -65,5 +65,4 @@ class RPCProcessor
                 throw new \Exception("Wrong operation");
         }
     }
-
 }

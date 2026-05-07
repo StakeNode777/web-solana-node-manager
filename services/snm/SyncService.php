@@ -34,7 +34,17 @@ class SyncService
             ->all();
         
         foreach ($validators as $validator) {
-            $this->updateById($validator->id);
+            if (empty($validator->snm_server)) {
+                $id = $validator->id;
+                \Yii::error('[SyncService::updateAll] [' . $id . '] Empty snm_server: SKIP...');
+                continue;
+            }
+
+            try {
+                $this->updateById($validator->id);
+            } catch(\Exception $e) {
+                \Yii::error('[SyncService::updateAll]' . $e->getMessage());
+            }
         }
     }
 

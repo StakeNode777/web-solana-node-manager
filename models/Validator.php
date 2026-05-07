@@ -60,7 +60,9 @@ class Validator extends ActiveRecord
 
     public function getSshPassword()
     {
-         return base64_decode($this->snm_ssh_password);
+        return $this->snm_ssh_password 
+        ? base64_decode($this->snm_ssh_password)
+        : "";
     }
 
     public static function find()

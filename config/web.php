@@ -55,8 +55,17 @@ $config = [
             'targets' => [
                 [
                     'class' => 'yii\log\FileTarget',
-                    'levels' => ['error', 'warning'],
+                    'levels' => ['error', 'warning', 'info'],
                 ],
+                [
+                    'class' => 'yii\log\FileTarget',
+                    'levels' => ['info'], // Write only informational messages
+                    'logFile' => '@runtime/logs/custom.log',
+                    'categories' => ['custom'], // Logs with the 'custom' category will be written here
+                    'maxFileSize' => 10240, // Maximum file size (in bytes)
+                    'maxLogFiles' => 5,     // Number of log files to keep (e.g. 5 files)
+                    'logVars' => ['_GET', '_POST', '_FILES'],
+                ],                
             ],
         ],
         'db' => $db,
