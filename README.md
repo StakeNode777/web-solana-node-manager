@@ -1,6 +1,6 @@
 # Web Solana Node Manager (WSNM)
 
-External Web App for Solana Node Manager — instant validator identity transfer in a few clicks
+Secure web interface for Solana validator identity transfers and failover
 
 **Secure. Mobile. In control.**
 
@@ -16,17 +16,19 @@ Validator keys remain encrypted and safely stored inside **SNM**, while WSNM onl
 to transfer your validator identity between available Solana servers.
 
 
-┌─────────┐        ┌──────────────┐        ┌──────────────┐ 
-│ Browser │ <----> │  WSNM Server │ <----> |  SNM Server  |
-└─────────┘        └──────────────┘        └──────────────┘ 
+```text
+┌─────────┐        ┌──────────────┐        ┌──────────────┐
+│ Browser │ <----> │  WSNM Server │ <----> │  SNM Server  │
+└─────────┘        └──────────────┘        └──────────────┘
                                              ▲          ▲
                                              │          │
                                              │          │
                                              v          v
-                               ┌────────────────┐    ┌────────────────┐  
+                               ┌────────────────┐    ┌────────────────┐
                                │ Solana Primary │    │ Solana Spare   │
                                │    Validator   │    │    Validator   │
                                └────────────────┘    └────────────────┘
+```
 
 ---
 
@@ -78,13 +80,21 @@ During the startup process, the script launches a full **LAMP stack inside Docke
 
 ```bash
 sudo apt update && sudo apt upgrade -y && sudo apt install -y git docker.io docker-compose-v2
+sudo usermod -aG docker $USER
+```
+
+Logout and login again, then continue.
+
+```bash
 git clone https://github.com/StakeNode777/web-solana-node-manager
 cd web-solana-node-manager
 bash start.sh
 ```
+
 After the build completes, the application will be available at:
 
-👉 [http://localhost:8080](http://localhost:8080)
+- your provided domain name, or
+- 👉 http://localhost:8080
 
 
 **To stop:**

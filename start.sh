@@ -69,3 +69,29 @@ write_domain_caddyfile "$DOMAIN"
 # 3) Run 'docker compose'
 echo "Starting 'docker compose...'"
 ADMIN_EMAIL=$ADMIN_EMAIL ADMIN_PASSWORD=$ADMIN_PASSWORD docker compose up -d --build
+
+if [[ -n "$ADMIN_PASSWORD" ]]; then
+
+    PROTOCOL="https"
+
+    if [[ "$DOMAIN" == "localhost" || "$DOMAIN" == "127.0.0.1" ]]; then
+        PROTOCOL="http"
+    fi
+
+    cat <<EOF
+
+========================================
+ Admin account created successfully
+========================================
+
+You can now log in to:
+${PROTOCOL}://$DOMAIN
+
+Login:    $ADMIN_EMAIL
+Password: $ADMIN_PASSWORD
+
+========================================
+
+EOF
+fi
+
